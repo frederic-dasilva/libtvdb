@@ -1,0 +1,75 @@
+/*
+   Copyright (C) 2010 Sebastian Trueg <trueg@kde.org>
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) version 3, or any
+   later version accepted by the membership of KDE e.V. (or its
+   successor approved by the membership of KDE e.V.), which shall
+   act as a proxy defined in Section 6 of version 3 of the license.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * \mainpage LibTvdb - A small library to fetch TV series information from the thetvdb.com web service.
+ *
+ * %LibTvdb is a <a href="http://www.qtsoftware.com/">Qt</a>-based library which provides
+ * asyncronous access to TV series information from <a href="http://thetvdb.com">thetvdb.com</a>
+ * via a very simple interface.
+ *
+ * Usage is straight-forward. Create an instance of Tvdb::Client, connect to the necessary
+ * signals, and use Tvdb::Client::getSeriesByName() or Tvdb::Client::getSeriesById() methods
+ * to fetch the information:
+ *
+ * \code
+ * Tvdb::Client* client = new Tvdb::Client();
+ * connect(client, SIGNAL(finished(Tvdb::Series)),
+ *         SLOT(myFinishedSlot(Tvdb::Series)));
+ * connect(client, SIGNAL(multipleResultsFound(QList<Tvdb::Series>)),
+ *         SLOT(myMultipleResultsSlot(QList<Tvdb::Series>)));
+ * client->getSeriesByName( "Lost" );
+ * \endcode
+ *
+ * Then in the slot connected to the Tvdb::Client::multipleResultsFound() signal
+ * decide which series you meant (typically by asking the user) and then call
+ * Tvdb::Client::getSeriesById() to fetch all details on the series:
+ *
+ * \code
+ * void myMultipleResultsSlot(const QList<Tvdb::Client::Series>& series)
+ * {
+ *     int i = askUserWhichSeriesToUse(series);
+ *     client->getSeriesById(series[i].id());
+ * }
+ * \endcode
+ *
+ * \section links Further Information
+ * \li <a href="http://www.sourceforge.net/projects/libtvdb">Sourceforge Libtvdb Project page including downloads</a>
+ *
+ * \section legal Copyright Notice
+ *
+ * Libtvdb is copyright (C) 2010 Sebastian Trueg <trueg@kde.org>.
+ *
+ * Libtvdv is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) version 3, or any
+ * later version accepted by the membership of KDE e.V. (or its
+ * successor approved by the membership of KDE e.V.), which shall
+ * act as a proxy defined in Section 6 of version 3 of the license.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ */

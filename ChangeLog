@@ -1,0 +1,16 @@
+0.4.0
+* Added full support for banners. All banners including their details are now
+  accessible through the Series::banners() and Season::banners() methods.
+* Added Series::language()
+* Added Series::hasSeason() and Season::hasEpisode()
+* Added Series::isValid() and Episode::isValid()
+* Changed buld system include dir: removed "tvdb" suffix.
+
+0.3.0
+* Added flags to the client. So far there is one: FetchFullDetails which will make the
+  client fetch the full details of all series in a multi-result situation.
+* Added writers and director to the Episode API.
+
+0.2.1
+* Fixed build error
+* New make rules to automatically generate and upload the API documentation to sf.net
