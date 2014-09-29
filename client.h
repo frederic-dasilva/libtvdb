@@ -81,7 +81,7 @@ namespace Tvdb {
         /**
          * Create a new client.
          */
-        Client( QObject* parent = 0 );
+        Client(QString language = QString(), QObject* parent = 0 );
 
         /**
          * Destructor.
@@ -137,6 +137,8 @@ namespace Tvdb {
         void multipleResultsFound( const QList<Tvdb::Series>& series );
 
     private:
+        QString _language;
+
         class Private;
         Private* const d;
 

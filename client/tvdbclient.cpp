@@ -71,7 +71,7 @@ namespace {
 TvdbClient::TvdbClient( QObject* parent )
     : QObject( parent )
 {
-    m_client = new Tvdb::Client( this );
+    m_client = new Tvdb::Client("fr", this );
     connect( m_client, SIGNAL( finished( Tvdb::Series ) ), SLOT( slotFinished( Tvdb::Series ) ) );
     connect( m_client, SIGNAL( multipleResultsFound( QList<Tvdb::Series> ) ), SLOT( slotMultipleResultsFound( QList<Tvdb::Series> ) ) );
 }

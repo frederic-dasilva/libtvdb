@@ -175,6 +175,9 @@ QList<FUrl> parseMirrorList( const QByteArray& data, TheTvdbTypeFlags flags )
 class Tvdb::Client::Private
 {
 public:
+    Private(QString language);
+
+    QString _language;
     QString m_apiKey;
 
     Tvdb::Client::TvdbFlags m_flags;
@@ -260,7 +263,7 @@ void Tvdb::Client::Private::handleNextRequest()
 
 void Tvdb::Client::Private::handleRequest( const TvdbRequest& req )
 {
-    const QString lang = QLatin1String( "en" ); // FIXME: do something with the language
+    const QString lang = _language.toLatin1(); // FIXME: do something with the language
 
     m_usedMirrorUrl = createMirrorUrl();
     FUrl url(m_usedMirrorUrl);
@@ -322,7 +325,7 @@ void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
 
     TvdbRequest req = m_requests.dequeue();
     if (downloader->finished()){
-        const QString lang = QLatin1String( "en" ); // FIXME: do something with the language
+        const QString lang = _language.toLatin1(); // FIXME: do something with the language
 
         QByteArray data = downloader->data();
         QBuffer buffer( &data );
@@ -404,9 +407,16 @@ void Tvdb::Client::Private::getSeriesByNameResult(TVDBFileDownloader *downloader
 }
 
 
-Tvdb::Client::Client( QObject* parent )
+Tvdb::Client::Private::Private(QString language)
+    :_language("en")
+{
+    if (!_language.isEmpty())
+        _language = language;
+}
+
+Tvdb::Client::Client(QString language, QObject* parent )
     : QObject( parent ),
-      d( new Private() )
+      d( new Private(language) )
 {
     d->q = this;
 }
