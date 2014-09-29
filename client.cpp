@@ -407,11 +407,17 @@ void Tvdb::Client::Private::getSeriesByNameResult(TVDBFileDownloader *downloader
 }
 
 
-Tvdb::Client::Private::Private(QString language)
+Tvdb::Client::Private::Private(QString lang)
     :_language("en")
 {
-    if (!_language.isEmpty())
-        _language = language;
+    // Checking if language is in the list
+    for (int i=0;i<sizeof(s_thetvdb_languages)/sizeof(s_thetvdb_languages[0]);i++)
+        if (lang == QString (s_thetvdb_languages[i]))
+            _language = lang;
+
+    if (lang != _language) {
+        qDebug() << "Language not found, using \"en\"";
+    }
 }
 
 Tvdb::Client::Client(QString language, QObject* parent )
