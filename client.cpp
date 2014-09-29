@@ -29,7 +29,7 @@
 #include <KZipFileEntry>
 
 #include <QtCore/QXmlStreamReader>
-#include <QtCore/QQueue>
+#include <QtCore/QQueue><
 #include <QtCore/QBuffer>
 #include <QtCore/QScopedPointer>
 
@@ -207,7 +207,7 @@ public:
 
     void fetchDetails(const QList<Series>& series);
 
-    void _k_getMirrorListResult( KJob* job );
+    void getMirrorListResult(TVDBFileDownloader*);
     void getSeriesByNameResult(TVDBFileDownloader*);
     void getSeriesByIdResult(TVDBFileDownloader*);
     Client* q;
@@ -240,10 +240,9 @@ void Tvdb::Client::Private::updateMirrors()
     url.addPath( apiKey() );
     url.addPath( QLatin1String( "mirrors.xml" ) );
     qDebug() << url;
-    KIO::StoredTransferJob* job = KIO::storedGet( url, KIO::Reload, KIO::HideProgressInfo );
-    job->addMetaData( "Charsets", "utf-8" );
-    connect( job, SIGNAL(result(KJob*)),
-             q, SLOT(_k_getMirrorListResult(KJob*)));
+
+    TVDBFileDownloader *file = new TVDBFileDownloader(url);
+    connect(file,SIGNAL(downloaded(TVDBFileDownloader*)),q,SLOT(getMirrorListResult(TVDBFileDownloader*)));
 }
 
 
@@ -300,25 +299,25 @@ void Tvdb::Client::Private::fetchDetails(const QList<Series> &series)
     handleNextRequest();
 }
 
-void Tvdb::Client::Private::_k_getMirrorListResult( KJob* job )
+
+void Tvdb::Client::Private::getMirrorListResult( TVDBFileDownloader *downloader )
 {
-    qDebug();
-    if ( !job->error() ) {
+    if (downloader == NULL)
+        return;
+
+    if (downloader->finished() ) {
         m_mirrors.clear();
 
         // parse mirrors
-        m_mirrors = parseMirrorList( static_cast<KIO::StoredTransferJob*>( job )->data(),
-                                     TheTvdbTypeZipFiles );
+        m_mirrors = parseMirrorList(downloader->data(), TheTvdbTypeZipFiles);
     }
 
-    // go on with the actual job
+    downloader->deleteLater();
     handleRequest( m_requests.head() );
 }
 
-
 void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
 {
-    qDebug();
     if (downloader == NULL)
         return;
 
@@ -359,12 +358,13 @@ void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
             // TODO: report the error somehow
             emit q->finished( Series() );
         }
-        downloader->deleteLater();
     }     else {
         qDebug() << "Download failed";
         // TODO: report the error somehow
         emit q->finished( Series() );
     }
+    // not using parent so we need to delete it
+    downloader->deleteLater();
 
 }
 
@@ -400,6 +400,8 @@ void Tvdb::Client::Private::getSeriesByNameResult(TVDBFileDownloader *downloader
         // TODO: report the error somehow
         emit q->finished( Series() );
     }
+    // not using parent so we need to delete it
+    downloader->deleteLater();
 }
 
 
