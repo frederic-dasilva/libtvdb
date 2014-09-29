@@ -22,18 +22,16 @@
 #include "series.h"
 #include "series_p.h"
 
-#include <kio/job.h>
-#include <krandom.h>
-
 #include <KZip>
 #include <KZipFileEntry>
 
 #include <QtCore/QXmlStreamReader>
-#include <QtCore/QQueue><
+#include <QtCore/QQueue>
 #include <QtCore/QBuffer>
 #include <QtCore/QScopedPointer>
 
 #include <QDebug>
+#include <QTime>
 
 #include "tvdbfiledownloader.h"
 
@@ -226,7 +224,8 @@ FUrl Tvdb::Client::Private::createMirrorUrl()
     }
     else {
         // choose one at random as recommended in the thetvdb api docs
-        url = m_mirrors[int( double(KRandom::random())/double(RAND_MAX) * double(m_mirrors.count()-1) )];
+        qsrand(QTime::currentTime().second());
+        url = m_mirrors[int( double(qrand())/double(RAND_MAX) * double(m_mirrors.count()-1) )];
     }
     return url;
 }

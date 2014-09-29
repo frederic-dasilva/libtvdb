@@ -143,9 +143,6 @@ namespace Tvdb {
         Q_PRIVATE_SLOT( d, void getMirrorListResult(TVDBFileDownloader*))
         Q_PRIVATE_SLOT( d, void getSeriesByIdResult(TVDBFileDownloader*))
         Q_PRIVATE_SLOT( d, void getSeriesByNameResult(TVDBFileDownloader*))
-        //Q_PRIVATE_SLOT( d, void _k_getMirrorListResult( KJob* job ) )
-        //Q_PRIVATE_SLOT( d, void _k_getSeriesByIdResult( KJob* job ) )
-        //Q_PRIVATE_SLOT( d, void _k_getSeriesByNameResult( KJob* job ) )
     };
 }
 
