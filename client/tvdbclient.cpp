@@ -33,39 +33,39 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QTextBrowser>
 
-#include <KApplication>
-#include <KDebug>
-#include <KDialog>
-#include <KCmdLineArgs>
-#include <KAboutData>
+#include <QApplication>
+#include <QDebug>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QPushButton>
 
 namespace {
-    QString seriesToHtml( const Tvdb::Series& series ) {
-        QString html;
-        QTextStream s( &html );
+QString seriesToHtml( const Tvdb::Series& series ) {
+    QString html;
+    QTextStream s( &html );
 
-        // series title
-        s << QLatin1String( "<p><strong>" ) << series.name();
-        if ( series.firstAired().isValid() )
-            s << QString::fromLatin1( " (%1)" ).arg( series.firstAired().year() );
-        s << QLatin1String( "</strong></p>" );
+    // series title
+    s << QLatin1String( "<p><strong>" ) << series.name();
+    if ( series.firstAired().isValid() )
+        s << QString::fromLatin1( " (%1)" ).arg( series.firstAired().year() );
+    s << QLatin1String( "</strong></p>" );
 
-        // series overview
-        s << QLatin1String( "<p><i>" ) + series.overview() + QLatin1String( "</i></p>" );
+    // series overview
+    s << QLatin1String( "<p><i>" ) + series.overview() + QLatin1String( "</i></p>" );
 
-        // episodes
-        Q_FOREACH( const Tvdb::Season& season, series.seasons() ) {
-            s << QLatin1String( "<p>Season " ) << season.seasonNumber() << QLatin1String( "<br>" );
-            Q_FOREACH( const Tvdb::Episode& episode, season.episodes() ) {
-                s << QString::number( episode.episodeNumber() ).rightJustified( 2, '0' ) << QLatin1String( " - " ) << episode.name();
-                if ( episode.firstAired().isValid() )
-                    s << QLatin1String( " (" ) << episode.firstAired().toString() << ')';
-                s << QLatin1String( "<br>" );
-            }
+    // episodes
+    Q_FOREACH( const Tvdb::Season& season, series.seasons() ) {
+        s << QLatin1String( "<p>Season " ) << season.seasonNumber() << QLatin1String( "<br>" );
+        Q_FOREACH( const Tvdb::Episode& episode, season.episodes() ) {
+            s << QString::number( episode.episodeNumber() ).rightJustified( 2, '0' ) << QLatin1String( " - " ) << episode.name();
+            if ( episode.firstAired().isValid() )
+                s << QLatin1String( " (" ) << episode.firstAired().toString() << ')';
+            s << QLatin1String( "<br>" );
         }
-
-        return html;
     }
+
+    return html;
+}
 }
 
 TvdbClient::TvdbClient( QObject* parent )
@@ -90,13 +90,18 @@ void TvdbClient::lookup( const QString& s )
 
 void TvdbClient::slotFinished( const Tvdb::Series& series )
 {
-    kDebug() << "Done:" << series;
+    qDebug() << "Done:" << series;
     if ( series.isValid() ) {
-        KDialog dlg;
-        dlg.setButtons( KDialog::Ok );
-        dlg.setCaption( QLatin1String( "Found Series" ) );
+        // Window
+        QDialog dlg;
+        dlg.setWindowTitle(QLatin1String( "Found Series" ) );
         QTextBrowser* browser = new QTextBrowser( &dlg );
-        dlg.setMainWidget( browser );
+        QPushButton* btn = new QPushButton("ok",&dlg);
+        QVBoxLayout *layout = new QVBoxLayout(&dlg);
+        layout->addWidget(browser);
+        layout->addWidget(btn);
+        connect(btn,SIGNAL(clicked()),&dlg,SLOT(close()));
+        dlg.setLayout(layout);
         browser->setText( seriesToHtml( series ) );
         dlg.exec();
     }
@@ -126,7 +131,7 @@ void TvdbClient::slotMultipleResultsFound( const QList<Tvdb::Series>& series )
                                                          0,
                                                          false ) );
     if ( i >= 0 ) {
-        kDebug() << "Getting" << series[i];
+        qDebug() << "Getting" << series[i];
         m_client->getSeriesById( series[i].id() );
     }
     else {
@@ -137,33 +142,12 @@ void TvdbClient::slotMultipleResultsFound( const QList<Tvdb::Series>& series )
 
 int main( int argc, char **argv )
 {
-    KAboutData aboutData( "tvdbclient",
-                          0,
-                          ki18n("Simple LibTvdb Client"),
-                          "1.0",
-                          ki18n("A Simple LibTvdb Client which allows to lookup TV series"),
-                          KAboutData::License_GPL,
-                          ki18n("(c) 2008-2011, Sebastian Trüg"),
-                          KLocalizedString(),
-                          "http://libtvdb.sourceforge.net" );
-    aboutData.addAuthor(ki18n("Sebastian Trüg"), ki18n("Maintainer"), "trueg@kde.org");
-
-    KCmdLineArgs::init( argc, argv, &aboutData );
-    KCmdLineOptions options;
-    options.add("+[query]", ki18n("The query to run through libtvdb - typically the name of a show."));
-    KCmdLineArgs::addCmdLineOptions( options );
-    KCmdLineArgs* args = KCmdLineArgs::parsedArgs();
-
-    KApplication app;
+    QApplication app(argc,argv);
     QApplication::setQuitOnLastWindowClosed( false );
 
     TvdbClient t;
 
-    QString s;
-    if ( args->count() > 0 )
-        s = args->arg(0);
-    else
-        s = QInputDialog::getText( 0, QLatin1String( "Series Search" ), QLatin1String( "Please enter a search term for the series you are looking for:" ) );
+    QString   s = QInputDialog::getText( 0, QLatin1String( "Series Search" ), QLatin1String( "Please enter a search term for the series you are looking for:" ) );
 
     if ( !s.isEmpty() ) {
         t.lookup( s );
