@@ -21,9 +21,10 @@
 #include "client.h"
 #include "series.h"
 #include "series_p.h"
+#include "url.h"
 
-#include <KZip>
-#include <KZipFileEntry>
+#include <quazip/quazip.h>
+#include <quazip/quazipfile.h>
 
 #include <QtCore/QXmlStreamReader>
 #include <QtCore/QQueue>
@@ -33,7 +34,7 @@
 #include <QDebug>
 #include <QTime>
 
-#include "tvdbfiledownloader.h"
+#include "filedownloader.h"
 
 namespace {
 // the API key registered for this lib which will be used as a default
@@ -135,16 +136,16 @@ QList<Tvdb::Series> parseSeriesList( const QByteArray& data )
 /**
      * Parse a list of mirrors from thetvdb.com.
      */
-QList<FUrl> parseMirrorList( const QByteArray& data, TheTvdbTypeFlags flags )
+QList<Tvdb::Url> parseMirrorList( const QByteArray& data, TheTvdbTypeFlags flags )
 {
-    QList<FUrl> mirrors;
+    QList<Tvdb::Url> mirrors;
     QXmlStreamReader xml( data );
     if( xml.readNextStartElement() && xml.name() == QLatin1String( "Mirrors" ) ) {
         qDebug() << "Parsing Mirrors";
         // iterate all mirrors
         while ( xml.readNextStartElement() &&
                 xml.name() == QLatin1String( "Mirror" ) ) {
-            FUrl url;
+            Tvdb::Url url;
             int typemask = 0;
             while ( xml.readNextStartElement() ) {
                 if ( xml.name() == QLatin1String( "mirrorpath" ) ) {
@@ -191,7 +192,7 @@ public:
     // we cache them here until we can emit the result
     QList<Series> m_multiResultCache;
 
-    FUrl m_usedMirrorUrl;
+    Tvdb::Url m_usedMirrorUrl;
 
     QString apiKey() const {
         if ( !m_apiKey.isEmpty() )
@@ -200,7 +201,7 @@ public:
             return QLatin1String( s_thetvdb_api_key );
     }
 
-    FUrl createMirrorUrl();
+    Tvdb::Url createMirrorUrl();
 
     void updateMirrors();
     void handleNextRequest();
@@ -208,19 +209,19 @@ public:
 
     void fetchDetails(const QList<Series>& series);
 
-    void getMirrorListResult(TVDBFileDownloader*);
-    void getSeriesByNameResult(TVDBFileDownloader*);
-    void getSeriesByIdResult(TVDBFileDownloader*);
+    void getMirrorListResult(Tvdb::FileDownloader*);
+    void getSeriesByNameResult(Tvdb::FileDownloader*);
+    void getSeriesByIdResult(Tvdb::FileDownloader*);
     Client* q;
 
 private:
-    QList<FUrl> m_mirrors;
+    QList<Tvdb::Url> m_mirrors;
 };
 
 
-FUrl Tvdb::Client::Private::createMirrorUrl()
+Tvdb::Url Tvdb::Client::Private::createMirrorUrl()
 {
-    FUrl url;
+    Tvdb::Url url;
     if ( m_mirrors.isEmpty() ) {
         // fallback
         url.setUrl(QLatin1String( "http://www.thetvdb.com" ));
@@ -237,14 +238,14 @@ FUrl Tvdb::Client::Private::createMirrorUrl()
 void Tvdb::Client::Private::updateMirrors()
 {
     qDebug() << "updateMirrors";
-    FUrl url = createMirrorUrl();
+    Tvdb::Url url = createMirrorUrl();
     url.addPath( QLatin1String( "/api/" ) );
     url.addPath( apiKey() );
     url.addPath( QLatin1String( "mirrors.xml" ) );
     qDebug() << url;
 
-    TVDBFileDownloader *file = new TVDBFileDownloader(url);
-    connect(file,SIGNAL(downloaded(TVDBFileDownloader*)),q,SLOT(getMirrorListResult(TVDBFileDownloader*)));
+    Tvdb::FileDownloader *file = new Tvdb::FileDownloader(url);
+    connect(file,SIGNAL(downloaded(Tvdb::FileDownloader*)),q,SLOT(getMirrorListResult(Tvdb::FileDownloader*)));
 }
 
 
@@ -266,7 +267,7 @@ void Tvdb::Client::Private::handleRequest( const TvdbRequest& req )
     const QString lang = _language.toLatin1(); // FIXME: do something with the language
 
     m_usedMirrorUrl = createMirrorUrl();
-    FUrl url(m_usedMirrorUrl);
+    Tvdb::Url url(m_usedMirrorUrl);
     url.addPath( QLatin1String( "/api/" ) );
 
     if ( req.seriesId > 0 ) {
@@ -282,12 +283,12 @@ void Tvdb::Client::Private::handleRequest( const TvdbRequest& req )
     qDebug() << url;
 
 
-    TVDBFileDownloader *file = new TVDBFileDownloader(url);
+    Tvdb::FileDownloader *file = new Tvdb::FileDownloader(url);
     if ( req.seriesId > 0 ) {
-        connect(file,SIGNAL(downloaded(TVDBFileDownloader*)),q,SLOT(getSeriesByIdResult(TVDBFileDownloader*)));
+        connect(file,SIGNAL(downloaded(Tvdb::FileDownloader*)),q,SLOT(getSeriesByIdResult(Tvdb::FileDownloader*)));
     }
     else {
-        connect(file,SIGNAL(downloaded(TVDBFileDownloader*)),q,SLOT(getSeriesByNameResult(TVDBFileDownloader*)));
+        connect(file,SIGNAL(downloaded(Tvdb::FileDownloader*)),q,SLOT(getSeriesByNameResult(Tvdb::FileDownloader*)));
     }
 
 }
@@ -302,7 +303,7 @@ void Tvdb::Client::Private::fetchDetails(const QList<Series> &series)
 }
 
 
-void Tvdb::Client::Private::getMirrorListResult( TVDBFileDownloader *downloader )
+void Tvdb::Client::Private::getMirrorListResult( Tvdb::FileDownloader *downloader )
 {
     if (downloader == NULL)
         return;
@@ -318,7 +319,7 @@ void Tvdb::Client::Private::getMirrorListResult( TVDBFileDownloader *downloader 
     handleRequest( m_requests.head() );
 }
 
-void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
+void Tvdb::Client::Private::getSeriesByIdResult(Tvdb::FileDownloader *downloader)
 {
     if (downloader == NULL)
         return;
@@ -329,14 +330,20 @@ void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
 
         QByteArray data = downloader->data();
         QBuffer buffer( &data );
-        KZip zip( &buffer );
-        if ( zip.open( QIODevice::ReadOnly ) ) {
-            if ( const KZipFileEntry* entry = dynamic_cast<const KZipFileEntry*>( zip.directory()->entry( lang + QLatin1String( ".xml" ) ) ) ) {
-                QScopedPointer<QIODevice> dev( entry->createDevice() );
-                Series s = SeriesPrivate::parseSeries( m_usedMirrorUrl, dev.data() );
-                if ( const KZipFileEntry* entry = dynamic_cast<const KZipFileEntry*>( zip.directory()->entry( QLatin1String( "banners.xml" ) ) ) ) {
-                    QScopedPointer<QIODevice> bannersDev( entry->createDevice() );
-                    s.d->parseBanners( m_usedMirrorUrl, bannersDev.data(), s );
+
+        QuaZip zip(&buffer);
+        if (zip.open(QuaZip::mdUnzip)) {
+
+            QuaZipFile file(&zip);
+
+            if (zip.setCurrentFile(lang + QLatin1String(".xml"))) {
+                file.open(QIODevice::ReadOnly);
+                Series s = SeriesPrivate::parseSeries( m_usedMirrorUrl, &file );
+                file.close();
+                if (zip.setCurrentFile(QLatin1String("banners.xml"))) {
+                    file.open(QIODevice::ReadOnly);
+                    s.d->parseBanners( m_usedMirrorUrl, &file, s );
+                    file.close();
                 }
                 m_multiResultCache << s;
                 if(m_requests.isEmpty()) {
@@ -348,29 +355,30 @@ void Tvdb::Client::Private::getSeriesByIdResult(TVDBFileDownloader *downloader)
                 else {
                     handleNextRequest();
                 }
-            }
-            else {
+
+            } else {
                 qDebug() << "Failed to access file in zip archive.";
                 // TODO: report the error somehow
                 emit q->finished( Series() );
             }
-        }
-        else {
+            zip.close();
+        } else {
             qDebug() << "Failed to open zip archive";
             // TODO: report the error somehow
             emit q->finished( Series() );
         }
-    }     else {
+    } else {
         qDebug() << "Download failed";
         // TODO: report the error somehow
         emit q->finished( Series() );
     }
+
     // not using parent so we need to delete it
     downloader->deleteLater();
 
 }
 
-void Tvdb::Client::Private::getSeriesByNameResult(TVDBFileDownloader *downloader)
+void Tvdb::Client::Private::getSeriesByNameResult(Tvdb::FileDownloader *downloader)
 {
     if (downloader == NULL)
         return;
@@ -411,7 +419,7 @@ Tvdb::Client::Private::Private(QString lang)
     :_language("en")
 {
     // Checking if language is in the list
-    for (int i=0;i<sizeof(s_thetvdb_languages)/sizeof(s_thetvdb_languages[0]);i++)
+    for (unsigned int i=0;i<sizeof(s_thetvdb_languages)/sizeof(s_thetvdb_languages[0]);i++)
         if (lang == QString (s_thetvdb_languages[i]))
             _language = lang;
 

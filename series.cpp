@@ -26,7 +26,7 @@
 #include "episode_p.h"
 #include "banner.h"
 #include "banner_p.h"
-
+#include "url.h"
 #include <QtCore/QSharedData>
 #include <QtCore/QUrl>
 #include <QtCore/QString>
@@ -40,12 +40,9 @@
 
 namespace {
     QUrl buildBannerUrl(const QUrl& mirrorUrl, const QString& path) {
-        QUrl url(mirrorUrl);
-        /*
-        KUrl url(mirrorUrl);
+        Tvdb::Url url(mirrorUrl);
         url.addPath(QLatin1String("/banners"));
         url.addPath(path);
-        */
         return url;
     }
 

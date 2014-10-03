@@ -9,6 +9,7 @@ find_package(KDE4 4.3.80 REQUIRED)
 include(KDE4Defaults)
 include(MacroLibrary)
 
+find_package(QuaZip)
 
 # set the version to be used by LibTvdbConfig.cmake
 # ===============================================================================================
@@ -33,6 +34,7 @@ install(FILES
 include_directories(
   ${QT_INCLUDES}
   ${KDE4_INCLUDES}
+  ${QUAZIP_INCLUDE_DIRS}
 )
 
 configure_file(version.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/version.h)
@@ -44,7 +46,8 @@ set( corelib_SRCS
   banner.cpp
   client.cpp
   version.cpp
-  tvdbfiledownloader.cpp
+  url.cpp
+  filedownloader.cpp
 )
 
 kde4_add_library(tvdb SHARED ${corelib_SRCS})
@@ -53,6 +56,7 @@ target_link_libraries(tvdb
   ${QT_QTGUI_LIBRARY}
   ${KDE4_KDEUI_LIBS}
   ${KDE4_KIO_LIBS}
+${QUAZIP_LIBRARIES}
 )
 
 set_target_properties(tvdb PROPERTIES VERSION ${CMAKE_LIBTVDB_VERSION} SOVERSION ${CMAKE_LIBTVDB_VERSION_MAJOR})

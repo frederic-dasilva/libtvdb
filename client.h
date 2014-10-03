@@ -29,37 +29,12 @@
 
 #include <QUrl>
 
-class TVDBFileDownloader;
 
-class FUrl : public QUrl
-{
-public:
-    FUrl()
-        :QUrl()
-    {
 
-    }
 
-    FUrl(const QString &url)
-        :QUrl(url)
-    {
-
-    }
-
-    FUrl(const QUrl &other)
-        :QUrl(other)
-    {
-
-    }
-
-    void addPath(const QString &txt)
-    {
-        // lol that works
-        setUrl(toString() + "/" + txt);
-    }
-};
 
 namespace Tvdb {
+    class FileDownloader;
     /**
      * \class Client client.h tvdb/client.h
      *
@@ -142,9 +117,9 @@ namespace Tvdb {
         class Private;
         Private* const d;
 
-        Q_PRIVATE_SLOT( d, void getMirrorListResult(TVDBFileDownloader*))
-        Q_PRIVATE_SLOT( d, void getSeriesByIdResult(TVDBFileDownloader*))
-        Q_PRIVATE_SLOT( d, void getSeriesByNameResult(TVDBFileDownloader*))
+        Q_PRIVATE_SLOT( d, void getMirrorListResult(Tvdb::FileDownloader*))
+        Q_PRIVATE_SLOT( d, void getSeriesByIdResult(Tvdb::FileDownloader*))
+        Q_PRIVATE_SLOT( d, void getSeriesByNameResult(Tvdb::FileDownloader*))
     };
 }
 

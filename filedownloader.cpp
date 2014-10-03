@@ -1,23 +1,26 @@
-#include "tvdbfiledownloader.h"
+#include "filedownloader.h"
 
-TVDBFileDownloader::TVDBFileDownloader(QUrl imageUrl, QObject *parent) :
+namespace Tvdb {
+
+
+FileDownloader::FileDownloader(QUrl url, QObject *parent) :
     QObject(parent),_finished(false)
 {
     connect(&m_WebCtrl, SIGNAL(finished(QNetworkReply*)),
             SLOT(fileDownloaded(QNetworkReply*)));
 
-    QNetworkRequest request(imageUrl);
+    QNetworkRequest request(url);
     m_WebCtrl.get(request);
 
-    // TODO: add timeout
+    // TODO: add timeout ?
 }
 
-TVDBFileDownloader::~TVDBFileDownloader()
+FileDownloader::~FileDownloader()
 {
 
 }
 
-void TVDBFileDownloader::fileDownloaded(QNetworkReply* pReply)
+void FileDownloader::fileDownloaded(QNetworkReply* pReply)
 {
     _finished = true;
     m_DownloadedData = pReply->readAll();
@@ -25,11 +28,14 @@ void TVDBFileDownloader::fileDownloaded(QNetworkReply* pReply)
     emit downloaded(this);
 }
 
-QByteArray TVDBFileDownloader::data() const
+QByteArray FileDownloader::data() const
 {
     return m_DownloadedData;
 }
 
 
-bool TVDBFileDownloader::finished() const
+bool FileDownloader::finished() const
 { return _finished; }
+
+
+}
